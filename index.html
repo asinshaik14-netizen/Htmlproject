@@ -66,6 +66,11 @@
       color: #ff6600;
       margin-top: 10px;
     }
+    .warning {
+      color: red;
+      font-weight: bold;
+      margin-top: 10px;
+    }
     ul {
       margin-top: 15px;
       text-align: left;
@@ -85,6 +90,7 @@
 
     <div id="message" class="message"></div>
     <div id="aiMessage" class="ai-message"></div>
+    <div id="warningMessage" class="warning"></div>
 
     <a href="added-medicine.html">
       <button type="button" class="added-btn">Added Medicines</button>
@@ -97,6 +103,7 @@
   <script>
     let skippedMedicines = JSON.parse(localStorage.getItem('skippedMedicines')) || [];
     let medicineHistory = JSON.parse(localStorage.getItem('medicineHistory')) || [];
+    let skipCounts = JSON.parse(localStorage.getItem('skipCounts')) || {}; // track skips per medicine
 
     document.getElementById('medicineForm').addEventListener('submit', function(e) {
       e.preventDefault();
@@ -126,8 +133,27 @@
 
         let skipped = confirm(`Did you skip taking ${medicine}? Click "OK" for Yes, "Cancel" for No.`);
         if (skipped) {
+          // update skippedMedicines and count
           if (!skippedMedicines.includes(medicine)) skippedMedicines.push(medicine);
           localStorage.setItem('skippedMedicines', JSON.stringify(skippedMedicines));
+
+          // increase skip count
+          skipCounts[medicine] = (skipCounts[medicine] || 0) + 1;
+          localStorage.setItem('skipCounts', JSON.stringify(skipCounts));
+
+          // show warning if skipped 2 or more times in a row
+          if (skipCounts[medicine] >= 2) {
+            document.getElementById('warningMessage').innerText = 
+              `⚠️ Warning: You have skipped ${medicine} ${skipCounts[medicine]} times in a row. Please take extra care or consult your doctor.`;
+          } else {
+            document.getElementById('warningMessage').innerText = '';
+          }
+
+        } else {
+          // reset skip count on successful intake
+          skipCounts[medicine] = 0;
+          localStorage.setItem('skipCounts', JSON.stringify(skipCounts));
+          document.getElementById('warningMessage').innerText = '';
         }
       }, time * 60 * 1000);
     }
