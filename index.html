@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Medicine Reminder</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef2f3;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+    input {
+      padding: 10px;
+      margin: 5px 0;
+      width: 80%;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .add-btn {
+      background-color: #4CAF50;
+    }
+    .nav-btn {
+      background-color: #2196F3;
+      margin-top: 10px;
+    }
+    .added-btn {
+      background-color: #ff9800;
+      margin-top: 10px;
+    }
+    .message {
+      margin-top: 15px;
+      font-weight: bold;
+      color: #333;
+    }
+    .ai-message {
+      color: #ff6600;
+      margin-top: 10px;
+    }
+    ul {
+      margin-top: 15px;
+      text-align: left;
+      padding-left: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Medicine Reminder</h1>
+
+    <form id="medicineForm">
+      <input type="text" id="medicineInput" placeholder="Enter medicine name" required />
+      <input type="number" id="timeInput" placeholder="Reminder in minutes" required />
+      <button type="submit" class="add-btn">Add Medicine & Set Reminder</button>
+    </form>
+
+    <div id="message" class="message"></div>
+    <div id="aiMessage" class="ai-message"></div>
+
+    <a href="added-medicine.html">
+      <button type="button" class="added-btn">Added Medicines</button>
+    </a>
+    <button type="button" class="nav-btn" onclick="showMedicineList()">Show Medicines</button>
+
+    <ul id="medicineList"></ul>
+  </div>
+
+  <script>
+    let skippedMedicines = JSON.parse(localStorage.getItem('skippedMedicines')) || [];
+    let medicineHistory = JSON.parse(localStorage.getItem('medicineHistory')) || [];
+
+    document.getElementById('medicineForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      let medicine = document.getElementById('medicineInput').value.trim();
+      let time = parseInt(document.getElementById('timeInput').value);
+
+      if (!medicine || isNaN(time)) return;
+
+      let timestamp = new Date().toLocaleString();
+      medicineHistory.push({ name: medicine, time: time, addedAt: timestamp });
+      localStorage.setItem('medicineHistory', JSON.stringify(medicineHistory));
+
+      setReminder(time, medicine);
+      document.getElementById('medicineForm').reset();
+    });
+
+    function setReminder(time, medicine) {
+      setTimeout(() => {
+        document.getElementById('message').innerText = `Time to take your ${medicine}!`;
+
+        if (skippedMedicines.includes(medicine)) {
+          document.getElementById('aiMessage').innerText = `You often skip ${medicine}. Maybe choose a better time?`;
+        } else {
+          document.getElementById('aiMessage').innerText = '';
+        }
+
+        let skipped = confirm(`Did you skip taking ${medicine}? Click "OK" for Yes, "Cancel" for No.`);
+        if (skipped) {
+          if (!skippedMedicines.includes(medicine)) skippedMedicines.push(medicine);
+          localStorage.setItem('skippedMedicines', JSON.stringify(skippedMedicines));
+        }
+      }, time * 60 * 1000);
+    }
+
+    function showMedicineList() {
+      const listContainer = document.getElementById('medicineList');
+      listContainer.innerHTML = '';
+
+      const storedHistory = JSON.parse(localStorage.getItem('medicineHistory')) || [];
+
+      if (storedHistory.length === 0) {
+        listContainer.innerHTML = '<li>No medicines added yet.</li>';
+        return;
+      }
+
+      storedHistory.forEach((entry, index) => {
+        const li = document.createElement('li');
+        li.textContent = `${index + 1}. ${entry.name} — every ${entry.time} min (added at ${entry.addedAt})`;
+        listContainer.appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>
